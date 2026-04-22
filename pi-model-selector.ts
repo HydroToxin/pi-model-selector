@@ -325,7 +325,7 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
                         selIdx = Math.min(filtered.length - 1, selIdx + 1); if (selIdx >= curY + 12) curY = selIdx - 11; tui.requestRender(); return;
                     }
                     if (matchesKey(data, Key.enter)) { if (filtered[selIdx]) done(filtered[selIdx].model); return; }
-                    if (matchesKey(data, Key.escape)) { done(null); return; }
+                    if (matchesKey(data, Key.escape) || matchesKey(data, Key.ctrl("c"))) { done(null); return; }
                     if (matchesKey(data, Key.backspace) || data === "\x7f") {
                         if (q.length > 0) { q = q.slice(0, -1); doFilter(); tui.requestRender(); } return;
                     }
@@ -362,9 +362,9 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
                     
                     return prefix + theme.fg(modelColor, modelCell) + " " + 
                            theme.fg("dim", provCell) + " " + 
-                           theme.fg("success", ctxCell) + " " + 
-                           theme.fg("dim", inCell) + " " + 
-                           theme.fg("dim", outCell) + " " + 
+                           theme.fg("info", ctxCell) + " " + 
+                           theme.fg("success", inCell) + " " + 
+                           theme.fg("warning", outCell) + " " + 
                            theme.fg(totCostColor, totCell) + " " + 
                            theme.fg(totTokColor, tokCell);
                 }
@@ -415,7 +415,7 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
 
                     // Help
                     out.push(theme.fg("dim", "─".repeat(w - 1)));
-                    out.push(truncateToWidth(theme.fg("dim", " Ctrl+I=IN  Ctrl+O=OUT  Ctrl+P=provider  Ctrl+A=all sessions  ↑↓ sel  Enter select  Esc cancel"), w - 1, ""));
+                    out.push(truncateToWidth(theme.fg("dim", " Ctrl+I=IN  Ctrl+O=OUT  Ctrl+P=provider  Ctrl+A=all sessions  ↑↓ sel  Enter select  Esc/Ctrl+C cancel"), w - 1, ""));
                     return out;
                 }
 
