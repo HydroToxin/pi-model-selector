@@ -1,0 +1,27 @@
+{
+  "name": "pi-model-selector",
+  "version": "1.0.0",
+  "description": "A Pi coding agent extension that enhances model selection with pricing and cumulative usage information.",
+  "main": "pi-model-selector.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HydroToxin/pi-model-selector.git"
+  },
+  "keywords": [
+    "pi",
+    "pi-coding-agent",
+    "extension",
+    "model",
+    "selector",
+    "pricing"
+  ],
+  "author": "HydroToxin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/HydroToxin/pi-model-selector/issues"
+  },
+  "homepage": "https://github.com/HydroToxin/pi-model-selector#readme"
+}
