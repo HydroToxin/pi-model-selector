@@ -429,8 +429,12 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
             });
 
             if (result === null) return;
-            ctx.model = result;
-            ctx.ui.notify(`Switched to ${result.name || result.id}`, "info");
+            const success = await pi.setModel(result);
+            if (success) {
+                ctx.ui.notify(`Switched to ${result.provider}/${result.id}`, "success");
+            } else {
+                ctx.ui.notify(`Failed to switch model (no API key?)`, "error");
+            }
         },
     });
 }
