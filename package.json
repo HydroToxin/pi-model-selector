@@ -23,5 +23,10 @@
   "bugs": {
     "url": "https://github.com/HydroToxin/pi-model-selector/issues"
   },
-  "homepage": "https://github.com/HydroToxin/pi-model-selector#readme"
+  "homepage": "https://github.com/HydroToxin/pi-model-selector#readme",
+  "pi": {
+    "extensions": [
+      "pi-model-selector.ts"
+    ]
+  }
 }
