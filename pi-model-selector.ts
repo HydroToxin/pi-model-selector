@@ -362,7 +362,7 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
                     
                     return prefix + theme.fg(modelColor, modelCell) + " " + 
                            theme.fg("dim", provCell) + " " + 
-                           theme.fg("info", ctxCell) + " " + 
+                           theme.fg("accent", ctxCell) + " " + 
                            theme.fg("success", inCell) + " " + 
                            theme.fg("warning", outCell) + " " + 
                            theme.fg(totCostColor, totCell) + " " + 
