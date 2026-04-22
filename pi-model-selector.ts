@@ -16,6 +16,7 @@ import { matchesKey, Key, fuzzyFilter, truncateToWidth } from "@mariozechner/pi-
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as zlib from "node:zlib";
+import * as os from "node:os";
 
 interface CumulativeUsage {
     totalCost: number;
@@ -30,6 +31,7 @@ interface CumulativeUsage {
 type UsageScope = "current" | "all-month";
 
 interface EnrichedModel {
+    isFavorite: boolean;
     model: Model<Api>;
     displayName: string;
     inputPrice: string;
@@ -44,6 +46,27 @@ interface EnrichedModel {
     cumulativeTokens: string;
     cumulativeCostNum: number;
     cumulativeTokensNum: number;
+}
+
+function getFavoritesPath(): string {
+    return path.join(os.homedir(), ".pi", "agent", "model-favorites.json");
+}
+
+function loadFavorites(): Set<string> {
+    try {
+        const fp = getFavoritesPath();
+        if (fs.existsSync(fp)) {
+            const data = JSON.parse(fs.readFileSync(fp, "utf-8"));
+            if (Array.isArray(data)) return new Set(data);
+        }
+    } catch {}
+    return new Set();
+}
+
+function saveFavorites(favorites: Set<string>): void {
+    try {
+        fs.writeFileSync(getFavoritesPath(), JSON.stringify(Array.from(favorites)));
+    } catch {}
 }
 
 function formatCost(costPerMillion: number): string {
@@ -207,7 +230,7 @@ function collectAllSessionsMonthUsage(ctx: any): Map<string, CumulativeUsage> {
     return usageMap;
 }
 
-function enrichModels(models: Model<Api>[], usage: Map<string, CumulativeUsage>): EnrichedModel[] {
+function enrichModels(models: Model<Api>[], usage: Map<string, CumulativeUsage>, favorites: Set<string>): EnrichedModel[] {
     return models.map((model, idx) => {
         const cost = model.cost || { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
         const fullId = `${model.provider}/${model.id}`;
@@ -221,6 +244,7 @@ function enrichModels(models: Model<Api>[], usage: Map<string, CumulativeUsage>)
         const hasUsage = u && u.callCount > 0;
         return {
             model,
+            isFavorite: favorites.has(fullId),
             displayName: model.name || model.id,
             provider: formatProviderName(model.provider),
             fullId,
@@ -246,8 +270,9 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
             const allModels = ctx.modelRegistry.getAvailable();
             if (allModels.length === 0) { ctx.ui.notify("No models available", "error"); return; }
 
+            const favorites = loadFavorites();
             const cumUsage = collectCurrentSessionUsage(ctx);
-            const emodels = enrichModels(allModels, cumUsage);
+            const emodels = enrichModels(allModels, cumUsage, favorites);
             let allMonthUsage: Map<string, CumulativeUsage> | null = null;
             let scope: UsageScope = "current";
             const curModel = ctx.model;
@@ -284,9 +309,12 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
                 let q = "", filtered = [...emodels], selIdx = 0, curY = 0;
                 type SF = "none" | "input" | "output";
                 let sf: SF = "none", sd: "asc" | "desc" = "asc", pfi = 0;
+                let showFavoritesOnly = false;
 
                 function doSort() {
                     filtered.sort((a, b) => {
+                        if (a.isFavorite && !b.isFavorite) return -1;
+                        if (!a.isFavorite && b.isFavorite) return 1;
                         if (a.fullId === curModelId) return -1;
                         if (b.fullId === curModelId) return 1;
                         if (sf === "input") return sd === "asc" ? a.inputPriceNum - b.inputPriceNum : b.inputPriceNum - a.inputPriceNum;
@@ -299,6 +327,11 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
                     const sel = providers[pfi];
                     if (sel === "All") filtered = [...emodels];
                     else filtered = emodels.filter(m => m.provider === sel);
+                    
+                    if (showFavoritesOnly) {
+                        filtered = filtered.filter(m => m.isFavorite);
+                    }
+                    
                     if (q.trim()) {
                         const items = filtered.map(m => ({ value: m.fullId, label: m.displayName, description: `${m.inputPrice} | ${m.outputPrice} | ${m.provider}` }));
                         const results = fuzzyFilter(items, q, it => `${it.label} ${it.description}`);
@@ -320,6 +353,29 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
                     }
                     if (matchesKey(data, Key.ctrlShift("p"))) {
                         pfi = (pfi + 1) % providers.length; doFilter(); tui.requestRender(); return;
+                    }
+                    if (data === " ") {
+                        const m = filtered[selIdx];
+                        if (m) {
+                            m.isFavorite = !m.isFavorite;
+                            if (m.isFavorite) favorites.add(m.fullId);
+                            else favorites.delete(m.fullId);
+                            saveFavorites(favorites);
+                            const oldId = m.fullId;
+                            if (showFavoritesOnly) doFilter(); else doSort();
+                            selIdx = filtered.findIndex(x => x.fullId === oldId);
+                            if (selIdx === -1) selIdx = 0;
+                            if (selIdx < curY) curY = selIdx;
+                            if (selIdx >= curY + 12) curY = selIdx - 11;
+                            tui.requestRender();
+                        }
+                        return;
+                    }
+                    if (matchesKey(data, Key.ctrlShift("f"))) {
+                        showFavoritesOnly = !showFavoritesOnly;
+                        doFilter();
+                        tui.requestRender();
+                        return;
                     }
                     if (matchesKey(data, Key.ctrlShift("a"))) {
                         refreshScope(scope === "current" ? "all-month" : "current"); doFilter(); tui.requestRender(); return;
@@ -344,7 +400,8 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
                     const allModels = [...filtered, ...emodels];
                     let maxModelLen = 5, maxProvLen = 8;
                     for (const m of allModels) {
-                        maxModelLen = Math.max(maxModelLen, m.displayName.length, m.cumulativeCost.length, m.cumulativeTokens.length);
+                        const dl = m.displayName.length + (m.isFavorite ? 2 : 0);
+                        maxModelLen = Math.max(maxModelLen, dl, m.cumulativeCost.length, m.cumulativeTokens.length);
                         maxProvLen = Math.max(maxProvLen, m.provider.length);
                     }
                     maxModelLen = Math.min(50, Math.max(20, maxModelLen));
@@ -399,7 +456,8 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
                         const m = filtered[i];
                         const isSel = i === selIdx, isCur = m.fullId === curModelId;
                         const prefix = isSel ? " ►" : "  ";
-                        out.push(col(prefix, m.displayName, m.provider, m.contextWindow, m.inputPrice, m.outputPrice, m.cumulativeCost, m.cumulativeTokens, isSel, isCur, false));
+                        const nameWithStar = m.isFavorite ? `${m.displayName} ★` : m.displayName;
+                        out.push(col(prefix, nameWithStar, m.provider, m.contextWindow, m.inputPrice, m.outputPrice, m.cumulativeCost, m.cumulativeTokens, isSel, isCur, false));
                     }
                     for (let i = endM - curY; i < mv; i++) out.push("");
 
@@ -421,7 +479,7 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
 
                     // Help
                     out.push(theme.fg("dim", "─".repeat(w - 1)));
-                    out.push(truncateToWidth(theme.fg("dim", " Ctrl+I=IN  Ctrl+O=OUT  Ctrl+P=provider  Ctrl+A=all sessions  ↑↓ sel  Enter select  Esc/Ctrl+C cancel"), w - 1, ""));
+                    out.push(truncateToWidth(theme.fg("dim", " Ctrl+I=IN  Ctrl+O=OUT  Ctrl+P=provider  Ctrl+A=all sessions  Ctrl+F=favs only  Space=fav  ↑↓ sel  Enter select  Esc/Ctrl+C cancel"), w - 1, ""));
                     return out;
                 }
 
