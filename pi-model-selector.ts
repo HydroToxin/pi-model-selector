@@ -211,7 +211,13 @@ function enrichModels(models: Model<Api>[], usage: Map<string, CumulativeUsage>)
     return models.map((model, idx) => {
         const cost = model.cost || { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
         const fullId = `${model.provider}/${model.id}`;
+        
+        // Some providers (like cursor-agent) don't report cost in the session logs, only tokens.
+        // If we have tokens but cost is 0, let's calculate the cost manually based on the model's pricing.
         const u = usage.get(fullId);
+        if (u && u.totalCost === 0 && u.totalTokens > 0) {
+            u.totalCost = (u.inputTokens * (cost.input / 1_000_000)) + (u.outputTokens * (cost.output / 1_000_000));
+        }
         const hasUsage = u && u.callCount > 0;
         return {
             model,
