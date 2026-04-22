@@ -473,7 +473,7 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
 
                     // Help
                     out.push(theme.fg("dim", "─".repeat(w - 1)));
-                    out.push(truncateToWidth(theme.fg("dim", " Ctrl+I=IN  Ctrl+O=OUT  Ctrl+P=provider  Ctrl+A=all sessions  Ctrl+F=favs only  Space=fav  ↑↓ sel  Enter select  Esc/Ctrl+C cancel"), w - 1, ""));
+                    out.push(truncateToWidth(theme.fg("dim", " Shift+Ctrl+I=IN  Shift+Ctrl+O=OUT  Shift+Ctrl+P=provider  Shift+Ctrl+A=all sessions  Shift+Ctrl+F=favs only  Space=fav  ↑↓ sel  Enter select  Esc/Ctrl+C cancel"), w - 1, ""));
                     return out;
                 }
 
