@@ -12,6 +12,7 @@ A Pi coding agent extension that enhances model selection with pricing and cumul
   - Sort by input price (`Shift+Ctrl+I`)
   - Sort by output price (`Shift+Ctrl+O`)
   - Filter by provider (`Shift+Ctrl+P`)
+- **Favorites** — Mark your favorite models with `Space`. Favorites get a star (★) and are always pinned to the top of the list. Press `Shift+Ctrl+F` to filter and show *only* your favorites.
 - **Auto-Calculated Costs** — For providers that only report token usage but no costs (like local models or `cursor-agent`), the extension automatically calculates the true cost based on the model's pricing.
 
 ## Installation
@@ -36,6 +37,8 @@ Once installed, use `/models` in any Pi session to browse available models.
 - `Shift+Ctrl+O` — Sort by Output Price
 - `Shift+Ctrl+P` — Cycle through Providers
 - `Shift+Ctrl+A` — Toggle usage scope (Current Session ↔ All Sessions this Month)
+- `Space` — Toggle Favorite status for the selected model
+- `Shift+Ctrl+F` — Toggle "Favorites Only" view
 
 ## Tech Stack
 
