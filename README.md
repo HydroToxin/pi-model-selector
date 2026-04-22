@@ -2,6 +2,8 @@
 
 A Pi coding agent extension that enhances model selection with pricing and cumulative usage information.
 
+![Preview](docs/preview.png)
+
 ## Features
 
 - **`/models` command** — Lists all available models with detailed metrics (leaves built-in `/model` untouched).
