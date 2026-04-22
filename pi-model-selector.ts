@@ -361,12 +361,6 @@ export default function modelSelectorExtension(pi: ExtensionAPI) {
                             if (m.isFavorite) favorites.add(m.fullId);
                             else favorites.delete(m.fullId);
                             saveFavorites(favorites);
-                            const oldId = m.fullId;
-                            if (showFavoritesOnly) doFilter(); else doSort();
-                            selIdx = filtered.findIndex(x => x.fullId === oldId);
-                            if (selIdx === -1) selIdx = 0;
-                            if (selIdx < curY) curY = selIdx;
-                            if (selIdx >= curY + 12) curY = selIdx - 11;
                             tui.requestRender();
                         }
                         return;
