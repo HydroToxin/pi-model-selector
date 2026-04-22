@@ -19,13 +19,13 @@ A Pi coding agent extension that enhances model selection with pricing and cumul
 
 ## Installation
 
-Place this file in your Pi extensions directory:
+You can install this extension directly via Pi's package manager:
 
 ```bash
-~/.pi/agent/extensions/pi-model-selector.ts
+pi install npm:pi-model-selector
 ```
 
-Pi will load it automatically on startup.
+*(Alternatively, you can manually place `pi-model-selector.ts` in your `~/.pi/agent/extensions/` directory.)*
 
 ## Usage
 
