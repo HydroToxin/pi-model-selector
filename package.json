@@ -1,6 +1,6 @@
 {
   "name": "pi-model-selector",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Pi coding agent extension that enhances model selection with pricing and cumulative usage information.",
   "main": "pi-model-selector.ts",
   "scripts": {
